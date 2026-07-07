@@ -101,8 +101,8 @@ with col1:
         o_lying = st.checkbox("整天躺床/活動量少")
         o_passive = st.checkbox("被動配合常規")
         o_no_interaction = st.checkbox("乏人際互動")
-        st.checkbox("人際互動良好", key="o_good_int")
-        st.checkbox("可與部分病友互動", key="o_peer_int")
+        o_good_int = st.checkbox("人際互動良好")
+        o_peer_int = st.checkbox("可與部分病友互動")
         o_gait_stable = st.checkbox("活動步態平穩")
         o_gait_unstable = st.checkbox("下床活動時步態欠穩")
         o_wheelchair = st.checkbox("輪椅代步")
@@ -142,7 +142,7 @@ with col1:
     e_col1, e_col2 = st.columns(2)
     
     with e_col1:
-        st.caption("行為與精神症狀反應")
+        st.caption("行為與精神症狀反应")
         e_express = st.checkbox("可說出聽幻覺/精神症狀干擾情形")
         e_distracted = st.checkbox("聽幻覺尚可轉移")
         e_no_help = st.checkbox("班內未額外尋求協助")
@@ -160,21 +160,41 @@ with col2:
     st.markdown("### 📋 AI 靈魂優化複製區（直接貼上 HIS）")
     if submit:
         with st.spinner("🧠 Gemini 大腦正在無縫揉合您的手寫細節中..."):
-            # 彙整勾選重點
+            # === 彙整勾選重點 (校對並補齊所有前端勾選方塊) ===
             o_summary = []
             if o_active: o_summary.append("精神可")
             if o_fatigue: o_summary.append("精神倦怠")
             if o_stable: o_summary.append("情緒平穩")
             if o_depressed: o_summary.append("情緒顯低落")
             if o_agitated: o_summary.append("情緒激躁易怒")
+            if o_anxious: o_summary.append("焦慮不安")
+            if o_labile: o_summary.append("情緒起伏大/情動不穩")
+            if o_smile: o_summary.append("表情有笑容")
             if o_flat: o_summary.append("表情淡漠")
+            
             if o_coherent: o_summary.append("言談可切題")
             if o_delusion: o_summary.append("言談夾雜妄想")
+            if o_grandiose: o_summary.append("言談誇大")
+            if o_poor_reality: o_summary.append("言談乏現實感")
+            if o_pressure: o_summary.append("言談速度快且量多")
+            if o_flight: o_summary.append("思考跳躍")
+            if o_gesturing: o_summary.append("對空比劃與手勢行為")
             if o_muttering: o_summary.append("喃喃自語")
-            if o_avh: o_summary.append("抱怨聽幻覺干擾、手摀住耳朵")
+            if o_avh: o_summary.append("抱怨聽/視幻覺干擾、手摀住耳朵")
+            if o_aggressive: o_summary.append("具言語/身體攻擊傾向")
+            if o_suicidal: o_summary.append("具自殺/自傷意念或衝動")
+            if o_runaway: o_summary.append("企圖衝出病房")
+            
             if o_activity: o_summary.append("大多於大廳活動")
+            if o_ot: o_summary.append("可參與職能治療")  # 已補上！
+            if o_lying: o_summary.append("整天躺床/活動量少")
+            if o_passive: o_summary.append("被動配合常規")
             if o_no_interaction: o_summary.append("乏人際互動")
+            if o_good_int: o_summary.append("人際互動良好")
+            if o_peer_int: o_summary.append("可與部分病友互動")
             if o_gait_stable: o_summary.append("活動步態平穩")
+            if o_gait_unstable: o_summary.append("下床活動時步態欠穩")
+            if o_wheelchair: o_summary.append("輪椅代步")
 
             i_summary = []
             if i_intro: i_summary.append("自我介紹")
@@ -184,13 +204,18 @@ with col2:
             if i_distract: i_summary.append("與其討論轉移聽幻覺之方法，對於目前之轉移方式給予肯定")
             if i_visit: i_summary.append("定時探視，觀察並記錄其行為表現")
             if i_assist: i_summary.append("當症狀干擾嚴重時給予必要協助")
-            if i_med: i_summary.append("督促按時服藥並檢查有無藏藥")
+            if i_reality: i_summary.append("引導現實導向，不爭辯妄想內容")
+            if i_med: i_summary.append("督促按時服藥並確實檢查有無藏藥")
+            if i_security: i_summary.append("加強查房與環境安全檢查")
+            if i_restraint: i_summary.append("依醫囑執行保護性約束護理")
             if i_fall_edu: i_summary.append("予預防跌倒衛教：採漸進式下床、睡前少喝水、發生意外時需呼叫旁人")
 
             e_summary = []
             if e_express: e_summary.append("可說出聽幻覺干擾情形")
             if e_distracted: e_summary.append("聽幻覺尚可轉移")
             if e_no_help: e_summary.append("班內未額外尋求協助")
+            if e_cooperate: e_summary.append("行為可配合治療與病房常規")
+            if e_med_ok: e_summary.append("能確實服藥，無藏藥行為")
             if e_accept_edu: e_summary.append("可了解預防跌倒衛教")
             if e_no_fall: e_summary.append("班內無跌倒情形")
 
