@@ -112,89 +112,173 @@ E_BEHAVIOR = ["可配合服藥及張口檢查", "可主動排隊服藥、張口�
               "班內行為可配合", "暫無不適切行為", "無跌倒情形"]
 
 
-def risk_sentence():
+
+# ==================================================================
+# 入院／出院／約束 專用選項
+# ==================================================================
+ADM_I = ["採誠懇、尊重、信任之態度與其接觸", "予以自我介紹", "建立治療性人際關係", "介紹醫療團隊",
+         "病房環境介紹及病室、訪客規定", "引導表達住院原因及感受", "評估外院治療及居家服藥情形",
+         "予傾聽、同理感受", "協助共同檢視隨身物品", "請家屬帶回或護理站保管危險物品",
+         "協助填寫住院同意書及精神科病人保護性隔離約束說明暨同意書", "衛教其了解環境安全維護之重要",
+         "通知專科護理師診視", "鼓勵住院期間配合治療", "觀察行為表現"]
+ADM_E = ["可配合安檢", "可填妥住院同意書及精神科病人保護性隔離約束說明暨同意書", "能說出住院原因",
+         "可配合入院護理", "可接受衛教說明", "暫無不適切行為表現", "無跌倒情形"]
+
+# 出院：單位檔案中沒有出院當日的紀錄，以下為一般常見寫法，請依單位習慣修改
+DIS_I = ["採尊重、友善及信任態度主動接觸", "維持治療性人際關係", "評估出院規劃", "引導表達出院後安排",
+         "予出院衛教：規則服藥、按時回診", "說明出院帶藥之用法及注意事項", "衛教症狀復發徵兆及處理方式",
+         "告知回診時間", "協助辦理出院手續", "歸還保管之隨身物品", "給予預防跌倒衛教：採漸進式下床、晚餐後減少飲水、睡前如廁、若有需要可請求他人協助"]
+DIS_E = ["可說出出院後生活安排", "可說出回診時間及服藥方式", "可說出症狀復發時之處理方式",
+         "對衛教內容可點頭表了解及接受", "已領回隨身物品", "無跌倒情形"]
+
+RESTRAINT_TYPES = ["腹部固定帶", "軀幹約束衣", "雙手泡棉式", "四肢布條式", "雙下肢布條式", "手腕式約束帶"]
+RES_O = ["情緒起伏明顯", "情緒激躁易怒", "具言語/身體攻擊傾向", "企圖衝出病房", "不聽勸阻",
+         "約束下情緒漸緩和", "反覆要求鬆開約束", "約束部位皮膚完整", "肢體末梢溫暖"]
+RES_I_PRE = ["備齊人力", "告知值班醫師"]
+RES_I = ["評估末梢血循及約束必要性", "預防約束損傷", "每15分鐘探視1次",
+         "每兩小時鬆開約束部位", "視情況滿足生理需求", "適時安撫情緒", "提醒維持合宜情緒及行為表現",
+         "觀察行為表現"]
+RES_E = ["可配合約束使用", "無約束損傷產生", "約束部位周圍皮膚無紅腫", "肢體末梢溫暖",
+         "情緒行為暫可配合", "無暴力及逃跑行為", "未再出現不適切行為"]
+
+
+def risk_sentence(prefix):
     """防範危急：選種類＋級數，組成「依醫囑持續防範暴力(第三級)及逃跑危急」"""
-    types = st.multiselect("🚨 依醫囑防範危急（可複選）", I_RISK_TYPES)
+    types = st.multiselect("🚨 依醫囑防範危急（可複選）", I_RISK_TYPES, key=f"{prefix}_risk")
     parts = []
     for t in types:
-        lv = st.selectbox(f"{t} 級數", RISK_LEVELS, key=f"risk_{t}")
+        lv = st.selectbox(f"{t} 級數", RISK_LEVELS, key=f"{prefix}_risk_{t}")
         parts.append(t if lv == "不註明級數" else f"{t}({lv})")
-    return f"依醫囑持續防範{'及'.join(parts)}危急" if parts else None
+    return [f"依醫囑持續防範{'及'.join(parts)}危急"] if parts else []
 
 
-def day_shift():
+def fall_score(prefix):
+    score = st.number_input("跌倒高危險評估（分，0 = 不寫）", min_value=0, max_value=20, step=1, key=f"{prefix}_fall")
+    return [f"跌倒高危險評估{score}分"] if score else []
+
+
+def admit_way(prefix):
+    """入院方式：組成「於1500由門診步行，家屬陪伴入病房」"""
+    t = st.text_input("入病房時間", placeholder="例如：1500", key=f"{prefix}_time")
+    src = st.selectbox("來源", ["門診", "急診", "他院轉入"], key=f"{prefix}_src")
+    how = st.selectbox("方式", ["步行", "推床", "輪椅"], key=f"{prefix}_how")
+    who = st.selectbox("陪同", ["家屬陪伴", "獨自", "工作人員陪同"], key=f"{prefix}_who")
+    return [f"{'於' + t if t else ''}由{src}{how}，{who}入病房"]
+
+
+def leave_way(prefix):
+    """離院：組成「於1030由家屬陪同步行離院」"""
+    t = st.text_input("離院時間", placeholder="例如：1030", key=f"{prefix}_ltime")
+    who = st.selectbox("陪同者", ["家屬", "案妻", "案母", "機構人員"], key=f"{prefix}_lwho")
+    how = st.selectbox("離院方式", ["步行", "輪椅"], key=f"{prefix}_lhow")
+    return [f"{'於' + t if t else ''}由{who}陪同{how}離院"] if t else []
+
+
+def restraint_action(prefix):
+    """約束開始／解除：組成「於1645依醫囑予腹部固定帶、雙手泡棉式約束使用」"""
+    act = st.selectbox("約束動作", ["（不寫）", "開始約束", "部分解除", "全部解除"], key=f"{prefix}_act")
+    if act == "（不寫）":
+        return []
+    t = st.text_input("時間", placeholder="例如：1645", key=f"{prefix}_rtime")
+    types = st.multiselect("約束種類（可複選）", RESTRAINT_TYPES, key=f"{prefix}_rtype")
+    when = f"於{t}" if t else ""
+    what = "、".join(types)
+    if act == "開始約束":
+        return [f"{when}依醫囑予{what}約束使用"]
+    if act == "部分解除":
+        keep = st.multiselect("持續使用的約束", RESTRAINT_TYPES, key=f"{prefix}_rkeep")
+        s = f"{when}依醫囑解除{what}約束"
+        return [s + (f"，{'、'.join(keep)}約束持續使用" if keep else "")]
+    return [f"{when}依醫囑解除{what}約束"]
+
+
+# ==================================================================
+# 各紀錄類型的版面設定：每區 = 幾欄，每欄 = 幾組（標題, 選項清單 或 小工具函式）
+# 勾選結果會依「欄 → 組」的順序送給 AI，所以這裡的順序就是紀錄的順序
+# ==================================================================
+FORMS = {
+    "常規": {
+        "O": [[("外觀與精神", O_LOOK), ("表情與情緒", O_MOOD)],
+              [("言談、思考與知覺", O_TALK), ("風險行為", O_RISK)],
+              [("活動與人際互動", O_ACT), ("步態", O_GAIT), ("跌倒評估", fall_score)]],
+        "I": [[("治療性關係", I_RELATION), ("會談、評估與情緒處理", I_EMOTION)],
+              [("給藥與安全", I_MED), ("防範危急", risk_sentence), ("預防跌倒", I_FALL)]],
+        "E": [[("表達與衛教反應", E_RESPONSE)], [("服藥與行為", E_BEHAVIOR)]],
+    },
+    "入院": {
+        "O": [[("入病房方式", admit_way), ("外觀與精神", O_LOOK), ("表情與情緒", O_MOOD)],
+              [("言談、思考與知覺", O_TALK), ("風險行為", O_RISK)],
+              [("步態", O_GAIT), ("跌倒評估", fall_score)]],
+        "I": [[("入院護理", ADM_I)],
+              [("防範危急", risk_sentence), ("預防跌倒", I_FALL)]],
+        "E": [[("入院評值", ADM_E)]],
+    },
+    "出院": {
+        "O": [[("外觀與精神", O_LOOK), ("表情與情緒", O_MOOD)],
+              [("言談、思考與知覺", O_TALK)],
+              [("活動與人際互動", O_ACT), ("步態", O_GAIT)]],
+        "I": [[("出院護理", DIS_I)]],
+        "E": [[("出院評值", DIS_E)], [("離院", leave_way)]],
+    },
+    "約束": {
+        "O": [[("外觀與精神", O_LOOK), ("表情與情緒", O_MOOD)],
+              [("言談、思考與知覺", O_TALK)],
+              [("約束相關觀察", RES_O)]],
+        "I": [[("約束前準備", RES_I_PRE), ("約束執行", restraint_action), ("約束護理", RES_I)],
+              [("防範危急", risk_sentence)]],
+        "E": [[("約束評值", RES_E)]],
+    },
+}
+
+
+def render_section(layout, prefix):
+    """畫出一區（O/I/E）的所有勾選，回傳勾選結果清單（依版面順序）"""
+    picked = []
+    cols = st.columns(len(layout))
+    for col, groups in zip(cols, layout):
+        with col:
+            for caption, items in groups:
+                st.caption(caption)
+                if callable(items):
+                    picked += items(f"{prefix}_{caption}")
+                else:
+                    picked += checkbox_group(items, prefix)
+    return picked
+
+
+def soie_form(kind):
+    form = FORMS[kind]
+    p = kind  # 每種紀錄的勾選分開記，互不干擾
     col1, col2 = st.columns([6, 4])
 
     with col1:
-        # === S 區 ===
         st.markdown("### 📝 【S】個案主訴 (Subjective)")
-        s_text = st.text_input("主訴內容（手寫輸入）：", placeholder="例如：個案表示「今天心情比較好」或「聽幻覺一直叫我走動」...")
+        s_text = st.text_input("主訴內容（手寫輸入）：", key=f"{p}_s",
+                               placeholder="例如：個案表示「今天心情比較好」或「聽幻覺一直叫我走動」...")
         st.write("---")
 
-        # === O 區 ===
         st.markdown("### 🔍 【O】客觀精神症狀與評估 (Objective)")
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            st.caption("外觀與精神")
-            o_summary = checkbox_group(O_LOOK, "o")
-            st.caption("表情與情緒")
-            o_summary += checkbox_group(O_MOOD, "o")
-        with c2:
-            st.caption("言談、思考與知覺")
-            o_summary += checkbox_group(O_TALK, "o")
-            st.caption("風險行為")
-            o_summary += checkbox_group(O_RISK, "o")
-        with c3:
-            st.caption("活動與人際互動")
-            o_summary += checkbox_group(O_ACT, "o")
-            st.caption("步態")
-            o_summary += checkbox_group(O_GAIT, "o")
-            fall_score = st.number_input("跌倒高危險評估（分，0 = 不寫）", min_value=0, max_value=20, step=1)
-            if fall_score:
-                o_summary.append(f"跌倒高危險評估{fall_score}分")
-        o_extra = st.text_input("✍️ O 區症狀/情境手寫補充：", placeholder="例如：可見手摀住耳朵、在大廳繞圈情形...")
+        o_summary = render_section(form["O"], f"{p}_o")
+        o_extra = st.text_input("✍️ O 區症狀/情境手寫補充：", key=f"{p}_ox", placeholder="例如：可見手摀住耳朵、在大廳繞圈情形...")
         st.write("---")
 
-        # === I 區 ===
         st.markdown("### 🛠️ 【I】護理措施 (Intervention)")
-        c1, c2 = st.columns(2)
-        with c1:
-            st.caption("治療性關係")
-            i_summary = checkbox_group(I_RELATION, "i")
-            st.caption("會談、評估與情緒處理")
-            i_summary += checkbox_group(I_EMOTION, "i")
-        with c2:
-            st.caption("給藥與安全")
-            i_summary += checkbox_group(I_MED, "i")
-            risk = risk_sentence()
-            if risk:
-                i_summary.append(risk)
-            st.caption("預防跌倒")
-            i_summary += checkbox_group(I_FALL, "i")
-        i_extra = st.text_input("✍️ I 區措施/情境手寫補充：", placeholder="例如：引導會談時了解目前聽幻覺干擾細節...")
+        i_summary = render_section(form["I"], f"{p}_i")
+        i_extra = st.text_input("✍️ I 區措施/情境手寫補充：", key=f"{p}_ix", placeholder="例如：引導會談時了解目前聽幻覺干擾細節...")
         st.write("---")
 
-        # === E 區 ===
         st.markdown("### 📊 【E】護理評值 (Evaluation)")
-        c1, c2 = st.columns(2)
-        with c1:
-            st.caption("表達與衛教反應")
-            e_summary = checkbox_group(E_RESPONSE, "e")
-        with c2:
-            st.caption("服藥與行為")
-            e_summary += checkbox_group(E_BEHAVIOR, "e")
-        e_extra = st.text_input("✍️ E 區反應/情境手寫補充：", placeholder="例如：聽幻覺仍存在但尚可配合轉移...")
+        e_summary = render_section(form["E"], f"{p}_e")
+        e_extra = st.text_input("✍️ E 區反應/情境手寫補充：", key=f"{p}_ex", placeholder="例如：聽幻覺仍存在但尚可配合轉移...")
         st.write("---")
 
-        # I、E 自動建議開關（預設關閉）
-        auto_mode = st.toggle("✨ I、E 沒勾也沒寫時，由 AI 依 S、O 區自動建議", value=False)
-        submit = st.button("🚀 啟動 Gemini AI 生成專屬護理紀錄", type="primary")
+        auto_mode = st.toggle("✨ I、E 沒勾也沒寫時，由 AI 依 S、O 區自動建議", value=False, key=f"{p}_auto")
+        submit = st.button("🚀 啟動 Gemini AI 生成專屬護理紀錄", type="primary", key=f"{p}_go")
 
     with col2:
         st.markdown("### 📋 AI 靈魂優化複製區（直接貼上 HIS）")
         if submit:
             with st.spinner("🧠 Gemini 大腦正在無縫揉合您的手寫細節中..."):
-                # 判斷 I、E 是否需要 AI 自動建議（開關打開，且該區沒勾也沒寫）
                 auto_i = auto_mode and not i_summary and not i_extra
                 auto_e = auto_mode and not e_summary and not e_extra
                 i_block = ("【I 區】: 使用者未填寫，請 AI 依 S、O 區建議" if auto_i else
@@ -205,6 +289,7 @@ def day_shift():
                            f"【E 區核心手寫補充（請自然嵌入上述勾選脈絡中）】: {e_extra if e_extra else '無'}")
 
                 raw_input_payload = (
+                    f"【紀錄類型】: {kind}紀錄\n"
                     f"【S 區主訴】: {s_text if s_text else '個案未主動表達特殊主訴'}\n\n"
                     f"【O 區常規勾選】: {'；'.join(o_summary) if o_summary else '無'}\n"
                     f"【O 區核心手寫補充（請自然嵌入上述勾選脈絡中）】: {o_extra if o_extra else '無'}\n\n"
@@ -219,7 +304,6 @@ def day_shift():
                     st.warning(f"⚠️ {parts} 段是 AI 建議的內容，請確認都是你實際執行、觀察到的，必要時修改後再貼進 HIS。")
                 else:
                     st.success("🎉 完美融合！手寫內容已流暢嵌入脈絡中！")
-
 
 # ==================================================================
 # 大夜：夜眠紀錄（不經過 AI，程式直接組句子）
@@ -283,11 +367,18 @@ def night_shift():
 
 
 # ==================================================================
-# 班別選擇
+# 紀錄類型與班別選擇
 # ==================================================================
-shift = st.radio("請選擇班別：", ["🌞 白班（SOIE）", "🌙 大夜（夜眠紀錄）"], horizontal=True)
-st.write("---")
-if shift.startswith("🌞"):
-    day_shift()
+kind = st.radio("請選擇紀錄類型：", ["📋 常規紀錄", "🏥 入院紀錄", "🏠 出院紀錄", "🔒 約束紀錄"], horizontal=True)
+if kind.startswith("📋"):
+    shift = st.radio("請選擇班別：", ["🌞 白班（SOIE）", "🌙 大夜（夜眠紀錄）"], horizontal=True)
+    st.write("---")
+    if shift.startswith("🌞"):
+        soie_form("常規")
+    else:
+        night_shift()
 else:
-    night_shift()
+    st.write("---")
+    if kind.startswith("🏠"):
+        st.info("ℹ️ 出院選項為一般常見寫法（單位檔案中沒有出院當日紀錄），歡迎提供範本再調整。")
+    soie_form({"🏥": "入院", "🏠": "出院", "🔒": "約束"}[kind[0]])
