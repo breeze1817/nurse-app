@@ -176,6 +176,19 @@ def fall_score(prefix):
     return [f"跌倒高危險評估{score}分"] if score else []
 
 
+def discharge_today(prefix):
+    """今日預出院：組成「今日預出院，於10:30案母前來辦理出院」"""
+    if not st.checkbox("今日預出院", value=True, key=f"{prefix}_on"):
+        return []
+    c1, c2 = st.columns(2)
+    t = c1.text_input("辦理時間", placeholder="例如：10:30", key=f"{prefix}_t")
+    who = c2.selectbox("前來辦理者", ["案父", "案母", "案妻", "案夫", "案子", "案女", "案兄", "案姊",
+                                  "案弟", "案妹", "家屬", "其他（自行輸入）"], key=f"{prefix}_who")
+    if who.startswith("其他"):
+        who = st.text_input("前來辦理者（自行輸入）", placeholder="例如：機構人員", key=f"{prefix}_who2")
+    return ["今日預出院" + (f"，於{t}{who}前來辦理出院" if t else "")]
+
+
 def leave_way(prefix):
     """離院：組成「於1030由家屬陪同步行離院」"""
     t = st.text_input("離院時間", placeholder="例如：1030", key=f"{prefix}_ltime")
@@ -253,7 +266,7 @@ FORMS = {
     },
     # 出院：單位檔案中沒有出院當日的紀錄，以下為一般常見寫法，請依單位習慣修改
     "出院": {
-        "O": O_BASIC + [R_ACT, R_SOCIAL, R_GAIT],
+        "O": [("出院", discharge_today)] + O_BASIC + [R_ACT, R_SOCIAL, R_GAIT],
         "I": [("接觸態度", ["採尊重、友善及信任態度主動接觸"]),
               ("治療性關係", ["維持治療性人際關係"]),
               ("出院規劃", ["評估出院規劃", "引導表達出院後安排"]),
