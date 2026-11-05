@@ -1,5 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 # --- Gemini AI 配置 ---
 # API Key 不寫在程式碼裡，改從 Streamlit 的 Secrets 讀取
@@ -14,6 +16,46 @@ st.caption("已優化手寫內容邏輯！AI 現在會自動將您的手寫補�
 # API Key 一律使用 Secrets 裡的金鑰，不需要使用者輸入，因此移除左側欄
 api_key = DEFAULT_API_KEY
 st.warning("⚠️ 請勿輸入病人姓名、病歷號、床號等可識別個資")
+quota_box = st.empty()  # 今日剩餘次數，等整頁跑完再填入最新數字
+
+# --- 今日 AI 使用次數（估算）---
+# Gemini 免費版每天 20 次，在美國太平洋時間午夜重置（台灣時間下午 3～4 點）
+# 計數存在伺服器記憶體裡，所有使用者共用；App 重新啟動（休眠、Reboot、更新程式）時會歸零
+DAILY_LIMIT = 20
+PACIFIC = ZoneInfo("America/Los_Angeles")
+TAIPEI = ZoneInfo("Asia/Taipei")
+
+
+@st.cache_resource
+def usage_store():
+    return {"date": None, "count": 0, "exhausted": False}
+
+
+def get_usage():
+    u = usage_store()
+    today = datetime.now(PACIFIC).date()
+    if u["date"] != today:  # 過了重置時間就歸零
+        u.update(date=today, count=0, exhausted=False)
+    return u
+
+
+def next_reset_taipei():
+    now = datetime.now(PACIFIC)
+    midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return midnight.astimezone(TAIPEI).strftime("%H:%M")
+
+
+def show_quota():
+    u = get_usage()
+    left = 0 if u["exhausted"] else max(DAILY_LIMIT - u["count"], 0)
+    msg = (f"🔋 今日 AI 剩餘次數：約 **{left} / {DAILY_LIMIT}** 次"
+           f"（台灣時間 {next_reset_taipei()} 重置；小夜、大夜紀錄不用 AI，不受限制）")
+    if left == 0:
+        quota_box.error(msg + "\n\n今日額度已用完，請等重置後再使用 AI 生成。")
+    elif left <= 5:
+        quota_box.warning(msg)
+    else:
+        quota_box.info(msg)
 
 # 初始化 Gemini 模型的函式
 def generate_soie_with_ai(raw_data_summary, api_key):
@@ -53,6 +95,7 @@ def generate_soie_with_ai(raw_data_summary, api_key):
             )
         )
         
+        get_usage()["count"] += 1  # 每送出一次請求就算一次（失敗也會被 Google 計入）
         response = model.generate_content(
             f"請將以下臨床資料，融合手寫細節，轉化為完美流暢的精神科 SOIE 紀錄：\n\n{raw_data_summary}",
             generation_config={"temperature": 0.3}
@@ -60,6 +103,14 @@ def generate_soie_with_ai(raw_data_summary, api_key):
         return response.text
     except Exception as e:
         print(f"Gemini error: {e}")  # 詳細錯誤只寫進後台 log
+        err = str(e)
+        if "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower():
+            if "PerDay" in err or "per day" in err.lower():
+                get_usage()["exhausted"] = True
+                return "❌ 今日 AI 免費額度已用完，請等重置後再使用。"
+            return "❌ 使用太頻繁（每分鐘上限 5 次），請等 1 分鐘後再試。"
+        if "503" in err:
+            return "❌ Google 伺服器忙碌中，請過幾秒再按一次生成。"
         return "❌ AI 聯絡失敗，請稍後再試，或檢查 API Key 是否有效。"
 
 # 小工具：畫出一組勾選框，回傳「有被勾選的項目」清單（大夜晨間情形使用）
@@ -437,3 +488,6 @@ else:
     if kind.startswith("🏠"):
         st.info("ℹ️ 出院選項為一般常見寫法（單位檔案中沒有出院當日紀錄），歡迎提供範本再調整。")
     soie_form({"🏥": "入院", "🏠": "出院", "🔒": "約束"}[kind[0]])
+
+# 整頁跑完後，更新最上方的今日剩餘次數
+show_quota()
