@@ -376,15 +376,60 @@ def night_shift():
         st.caption("💡 大夜紀錄由程式直接組成，不經過 AI，不消耗額度，數字也不會寫錯。")
 
 
+
+# ==================================================================
+# 小夜：一段敘述（不經過 AI，程式依單位書寫順序直接組句子）
+# ==================================================================
+EVENING_ROWS = [
+    ("精神", ["晚間精神可", "精神可", "精神顯倦怠"]),
+    R_LOOK, R_FACE, R_MOOD, R_TALK, R_THINK,
+    ("活動", ["多於大廳活動", "多於大廳看電視", "多於房內活動", "多於病室內躺床活動"]),
+    ("人際互動", ["人際互動合宜", "與病友互動合宜", "可與部分病友互動", "人際互動少", "人際互動疏離", "未見與他人互動"]),
+    ("步態", ["活動步態平穩", "行走步態平穩", "活動步態緩慢尚穩", "下床輪椅代步"]),
+    ("服藥治療", ["可配合服藥及張口檢查", "可主動排隊服藥及張口檢查", "班內治療可配合"]),
+    ("防範危急", risk_sentence),
+    ("行為", ["暫無不適切行為"]),
+    ("熄燈後", ["熄燈後叫人鈴備用", "熄燈後可自行躺床入睡", "熄燈後可自行躺床休息", "熄燈後尚未入睡"]),
+    ("跌倒", ["無跌倒發生"]),
+]
+
+
+def evening_shift():
+    col1, col2 = st.columns([6, 4])
+    with col1:
+        st.markdown("### 🌆 小夜紀錄")
+        start = st.selectbox("接班時", ["（不寫）", "於大廳活動", "於房內躺床", "於房內活動"], key="小夜_start")
+        parts = [] if start == "（不寫）" else [f"接班時{start}"]
+        parts += render_section(EVENING_ROWS, "小夜")
+        extra = st.text_input("✍️ 其他補充（例如班內特殊狀況）：", key="小夜_extra",
+                              placeholder="例如：2235 按鈴下床如廁，步態緩慢尚穩，如廁後可再入睡")
+        if extra:
+            parts.append(extra.strip("，。 "))
+    # 熄燈後勾了好幾個時，只保留第一個「熄燈後」，例如「熄燈後叫人鈴備用，可自行躺床入睡」
+    seen = False
+    for i, x in enumerate(parts):
+        if x.startswith("熄燈後"):
+            if seen:
+                parts[i] = x[len("熄燈後"):]
+            seen = True
+    note = "，".join(parts) + "。" if parts else ""
+
+    with col2:
+        st.markdown("### 📋 複製區（直接貼上 HIS）")
+        st.text_area("直接全選複製：", value=note, height=250, key="小夜_out")
+        st.caption("💡 小夜紀錄由程式直接組成，不經過 AI，不消耗額度。")
+
 # ==================================================================
 # 紀錄類型與班別選擇
 # ==================================================================
 kind = st.radio("請選擇紀錄類型：", ["📋 常規紀錄", "🏥 入院紀錄", "🏠 出院紀錄", "🔒 約束紀錄"], horizontal=True)
 if kind.startswith("📋"):
-    shift = st.radio("請選擇班別：", ["🌞 白班（SOIE）", "🌙 大夜（夜眠紀錄）"], horizontal=True)
+    shift = st.radio("請選擇班別：", ["🌞 白班（SOIE）", "🌆 小夜（一段敘述）", "🌙 大夜（夜眠紀錄）"], horizontal=True)
     st.write("---")
     if shift.startswith("🌞"):
         soie_form("常規")
+    elif shift.startswith("🌆"):
+        evening_shift()
     else:
         night_shift()
 else:
