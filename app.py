@@ -2,7 +2,9 @@ import streamlit as st
 import google.generativeai as genai
 
 # --- Gemini AI 配置 ---
-DEFAULT_API_KEY = "AQ.Ab8RN6InKYUmlTHz5lnBYb56Et_tDVsSV9S_KjSFlquPoe3NOA"
+# API Key 不寫在程式碼裡，改從 Streamlit 的 Secrets 讀取
+# （在 Streamlit 後台 Manage app → Settings → Secrets 填入：GEMINI_API_KEY = "你的新金鑰"）
+DEFAULT_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
 
 # --- Streamlit 網頁介面設計 ---
 st.set_page_config(layout="wide", page_title="精神科專屬 SOIE 紀錄優化器 Pro (AI融合版)")
@@ -12,7 +14,10 @@ st.caption("已優化手寫內容邏輯！AI 現在會自動將您的手寫補�
 # 側邊欄：保留金鑰彈性與說明
 with st.sidebar:
     st.markdown("### 🔑 AI 大腦設定")
-    api_key = st.text_input("Gemini API Key：", value=DEFAULT_API_KEY, type="password")
+    # 金鑰只留在伺服器端，不再預填進輸入框（預填的值會被送到每位使用者的瀏覽器）
+    user_key = st.text_input("Gemini API Key（可留空，使用預設金鑰）：", type="password")
+    api_key = user_key or DEFAULT_API_KEY
+    st.caption("⚠️ 請勿輸入病人姓名、病歷號、床號等可識別個資")
     st.markdown("---")
     st.markdown("""
     **💡 臨床流暢提示：**
@@ -52,7 +57,8 @@ def generate_soie_with_ai(raw_data_summary, api_key):
         )
         return response.text
     except Exception as e:
-        return f"❌ AI 聯絡失敗，原因：{str(e)}"
+        print(f"Gemini error: {e}")  # 詳細錯誤只寫進後台 log
+        return "❌ AI 聯絡失敗，請稍後再試，或檢查 API Key 是否有效。"
 
 col1, col2 = st.columns([6, 4])
 
