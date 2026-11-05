@@ -360,7 +360,8 @@ def soie_form(kind):
     if quick:
         with col2:
             st.markdown("### 📋 複製區（直接貼上 HIS）")
-            st.text_area("直接全選複製：", height=500, key=f"{p}_quick_out",
+            # 注意：這裡不能加 key，加了 key 之後 Streamlit 只會顯示第一次的內容，不會跟著勾選更新
+            st.text_area("直接全選複製：", height=500,
                          value=quick_soie(s_text, o_summary, o_extra, i_summary, i_extra, e_summary, e_extra))
             st.caption("💡 快速組句不經過 AI，不消耗額度。")
         return
@@ -496,7 +497,7 @@ def evening_shift():
 
     with col2:
         st.markdown("### 📋 複製區（直接貼上 HIS）")
-        st.text_area("直接全選複製：", value=note, height=250, key="小夜_out")
+        st.text_area("直接全選複製：", value=note, height=250)
         st.caption("💡 小夜紀錄由程式直接組成，不經過 AI，不消耗額度。")
 
 # ==================================================================
