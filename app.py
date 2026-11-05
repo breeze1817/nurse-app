@@ -25,14 +25,15 @@ def generate_soie_with_ai(raw_data_summary, api_key):
         return "❌ 錯誤：請在左側輸入您的 Gemini API Key 才能啟動 AI 功能！"
     try:
         genai.configure(api_key=api_key)
+        # 【修正處】：將不存在的 2.5 改回正確的 1.5-flash
         model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash",
+            model_name="gemini-1.5-flash",
             system_instruction=(
                 "你是一位資深的精神科護理師。你的任務是將使用者勾選的精神症狀與護理處置關鍵字，"
                 "融合成一段結構嚴謹、語氣自然、排版流暢的精神科 SOIE 護理紀錄。\n\n"
                 "【💡 核心融合規則：針對手寫補充】\n"
                 "使用者在各區填寫的「手寫補充內容」是該段落的核心情境。你必須根據語意，將手寫補充的細節"
-                "自然地交織、嵌入在勾選症狀之間。絕對不要把手寫補充硬塞在段落的最後面！"
+                "自然地交織、嵌入在勾選症狀之間。絕對不要把手寫補充硬塞在段落的最後面！\n"
                 "例如：如果勾選了『大多於大廳活動』，手寫補充了『在大廳繞圈情形』，應融合成『大多於大廳活動，可見在大廳繞圈情形』，而非放在句尾端。\n\n"
                 "【重要：你必須嚴格模仿以下使用者的個人書寫風格範本】\n"
                 "範本內容：\n"
@@ -160,7 +161,6 @@ with col2:
     st.markdown("### 📋 AI 靈魂優化複製區（直接貼上 HIS）")
     if submit:
         with st.spinner("🧠 Gemini 大腦正在無縫揉合您的手寫細節中..."):
-            # === 彙整勾選重點 (校對並補齊所有前端勾選方塊) ===
             o_summary = []
             if o_active: o_summary.append("精神可")
             if o_fatigue: o_summary.append("精神倦怠")
@@ -186,7 +186,7 @@ with col2:
             if o_runaway: o_summary.append("企圖衝出病房")
             
             if o_activity: o_summary.append("大多於大廳活動")
-            if o_ot: o_summary.append("可參與職能治療")  # 已補上！
+            if o_ot: o_summary.append("可參與職能治療")
             if o_lying: o_summary.append("整天躺床/活動量少")
             if o_passive: o_summary.append("被動配合常規")
             if o_no_interaction: o_summary.append("乏人際互動")
@@ -219,7 +219,6 @@ with col2:
             if e_accept_edu: e_summary.append("可了解預防跌倒衛教")
             if e_no_fall: e_summary.append("班內無跌倒情形")
 
-            # 重新組織 Payload，明確指示手寫是「融入用的細節情境」
             raw_input_payload = f"""
             【S 區主訴】: {s_text if s_text else "個案未主動表達特殊主訴"}
             
