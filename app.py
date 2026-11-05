@@ -176,15 +176,6 @@ def fall_score(prefix):
     return [f"跌倒高危險評估{score}分"] if score else []
 
 
-def admit_way(prefix):
-    """入院方式：組成「於1500由門診步行，家屬陪伴入病房」"""
-    t = st.text_input("入病房時間", placeholder="例如：1500", key=f"{prefix}_time")
-    src = st.selectbox("來源", ["門診", "急診", "他院轉入"], key=f"{prefix}_src")
-    how = st.selectbox("方式", ["步行", "推床", "輪椅"], key=f"{prefix}_how")
-    who = st.selectbox("陪同", ["家屬陪伴", "獨自", "工作人員陪同"], key=f"{prefix}_who")
-    return [f"{'於' + t if t else ''}由{src}{how}，{who}入病房"]
-
-
 def leave_way(prefix):
     """離院：組成「於1030由家屬陪同步行離院」"""
     t = st.text_input("離院時間", placeholder="例如：1030", key=f"{prefix}_ltime")
@@ -243,7 +234,7 @@ FORMS = {
               R_NO_FALL],
     },
     "入院": {
-        "O": [("入病房方式", admit_way)] + O_BASIC + [R_RISK, R_GAIT, ("跌倒評估", fall_score)],
+        "O": O_BASIC + [R_RISK, R_GAIT, ("跌倒評估", fall_score)],  # 入病房方式由 HIS 自動帶入，不需填寫
         "I": [("接觸態度", ["採誠懇、尊重、信任之態度與其接觸"]),
               ("自我介紹", ["予以自我介紹", "介紹醫療團隊"]),
               ("治療性關係", ["建立治療性人際關係"]),
