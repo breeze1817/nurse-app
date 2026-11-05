@@ -11,23 +11,14 @@ st.set_page_config(layout="wide", page_title="精神科專屬 SOIE 紀錄優化�
 st.title("🧠 精神科專屬 SOIE 護理紀錄生成器 (AI 語意無縫融合版)")
 st.caption("已優化手寫內容邏輯！AI 現在會自動將您的手寫補充嵌入敘事中最流暢、最適合的脈絡位置。")
 
-# 側邊欄：保留金鑰彈性與說明
-with st.sidebar:
-    st.markdown("### 🔑 AI 大腦設定")
-    # 金鑰只留在伺服器端，不再預填進輸入框（預填的值會被送到每位使用者的瀏覽器）
-    user_key = st.text_input("Gemini API Key（可留空，使用預設金鑰）：", type="password")
-    api_key = user_key or DEFAULT_API_KEY
-    st.caption("⚠️ 請勿輸入病人姓名、病歷號、床號等可識別個資")
-    st.markdown("---")
-    st.markdown("""
-    **💡 臨床流暢提示：**
-    手寫補充欄位您可以隨心所欲地打，AI 會根據上下文語意（例如看到『繞圈』就結合『大廳活動』），自動把它們安插在最自然的位置，不會再死板地丟在最末端！
-    """)
+# API Key 一律使用 Secrets 裡的金鑰，不需要使用者輸入，因此移除左側欄
+api_key = DEFAULT_API_KEY
+st.warning("⚠️ 請勿輸入病人姓名、病歷號、床號等可識別個資")
 
 # 初始化 Gemini 模型的函式
 def generate_soie_with_ai(raw_data_summary, api_key):
     if not api_key:
-        return "❌ 錯誤：請在左側輸入您的 Gemini API Key 才能啟動 AI 功能！"
+        return "❌ 錯誤：系統尚未設定 Gemini API Key（請到 Streamlit 的 Secrets 設定 GEMINI_API_KEY）"
     try:
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(
