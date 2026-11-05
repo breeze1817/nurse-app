@@ -307,9 +307,27 @@ def render_section(rows, prefix):
     return picked
 
 
+def quick_soie(s_text, o, o_extra, i, i_extra, e, e_extra):
+    """不用 AI：把各區勾選依順序用「，」接起來，手寫補充接在該區最後"""
+    def line(tag, items, extra):
+        parts = list(items) + ([extra.strip("，。 ")] if extra else [])
+        return f"{tag}：{'，'.join(parts)}。" if parts else ""
+    lines = [f"S：{s_text.strip()}" if s_text else "",
+             line("O", o, o_extra), line("I", i, i_extra), line("E", e, e_extra)]
+    return "\n".join(x for x in lines if x)
+
+
 def soie_form(kind):
     form = FORMS[kind]
     p = kind  # 每種紀錄的勾選分開記，互不干擾
+    # 生成方式：AI 融合 或 快速組句（不用 AI、不限次數）；今日額度用完時預設切到快速組句
+    u = get_usage()
+    no_quota = u["exhausted"] or u["count"] >= DAILY_LIMIT
+    mode = st.radio("生成方式：", ["🤖 AI 生成（每日限額）", "⚡ 快速組句（不用 AI，不限次數）"],
+                    index=1 if no_quota else 0, horizontal=True, key=f"{p}_mode")
+    quick = mode.startswith("⚡")
+    if quick:
+        st.caption("快速組句：依書寫順序把勾選的詞用「，」接起來，手寫補充接在該區最後面，畫面會即時更新。")
     col1, col2 = st.columns([6, 4])
 
     with col1:
@@ -333,8 +351,19 @@ def soie_form(kind):
         e_extra = st.text_input("✍️ E 區反應/情境手寫補充：", key=f"{p}_ex", placeholder="例如：聽幻覺仍存在但尚可配合轉移...")
         st.write("---")
 
-        auto_mode = st.toggle("✨ I、E 沒勾也沒寫時，由 AI 依 S、O 區自動建議", value=False, key=f"{p}_auto")
-        submit = st.button("🚀 啟動 Gemini AI 生成專屬護理紀錄", type="primary", key=f"{p}_go")
+        if quick:
+            auto_mode, submit = False, False
+        else:
+            auto_mode = st.toggle("✨ I、E 沒勾也沒寫時，由 AI 依 S、O 區自動建議", value=False, key=f"{p}_auto")
+            submit = st.button("🚀 啟動 Gemini AI 生成專屬護理紀錄", type="primary", key=f"{p}_go")
+
+    if quick:
+        with col2:
+            st.markdown("### 📋 複製區（直接貼上 HIS）")
+            st.text_area("直接全選複製：", height=500, key=f"{p}_quick_out",
+                         value=quick_soie(s_text, o_summary, o_extra, i_summary, i_extra, e_summary, e_extra))
+            st.caption("💡 快速組句不經過 AI，不消耗額度。")
+        return
 
     with col2:
         st.markdown("### 📋 AI 靈魂優化複製區（直接貼上 HIS）")
