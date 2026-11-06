@@ -15,6 +15,16 @@ st.caption("已優化手寫內容邏輯！AI 現在會自動將您的手寫補�
 
 # API Key 一律使用 Secrets 裡的金鑰，不需要使用者輸入，因此移除左側欄
 api_key = DEFAULT_API_KEY
+# 讓選項按鈕太多時自動換行（Streamlit 預設是排成一行、超出的部分被遮住）
+st.markdown("""
+<style>
+div[data-testid="stButtonGroup"],
+div[data-testid="stButtonGroup"] div {
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+}
+</style>
+""", unsafe_allow_html=True)
 st.warning("⚠️ 請勿輸入病人姓名、病歷號、床號等可識別個資")
 quota_box = st.empty()  # 今日剩餘次數，等整頁跑完再填入最新數字
 
